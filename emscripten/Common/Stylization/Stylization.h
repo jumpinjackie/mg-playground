@@ -88,10 +88,12 @@
 #define __WFILE__ WIDEN(__FILE__)
 #endif
 
+#ifndef EMSCRIPTEN
 // avoid linux warnings
 #ifndef _WIN32
 static const void* avoid_warning1 = (void*)FDO_ACTIVELONGTRANSACTION;
 static const void* avoid_warning2 = (void*)FDO_ROOTLONGTRANSACTION;
+#endif
 #endif
 
 #endif

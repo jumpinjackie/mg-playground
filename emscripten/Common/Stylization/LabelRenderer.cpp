@@ -18,7 +18,10 @@
 #include "stdafx.h"
 #include "LabelRenderer.h"
 #include "SE_Renderer.h"
+#ifndef EMSCRIPTEN
 #include "FdoEvaluator.h"
+#else
+#endif
 
 //#define DEBUG_LABELS
 
@@ -87,11 +90,11 @@ void LabelRenderer::ProcessLabelGroup(RS_LabelInfo*    labels,
                                       double           scaleLimit)
 {
     // get the geometry type
-    int geomType = (path != NULL)? path->geom_type() : FdoGeometryType_None;
+    int geomType = (path != NULL)? path->geom_type() : GeometryType_None;
 
     // in the case of linear geometry we'll label along the path, so prepare
     // for that (transform to screen space, group into stitch groups)
-    if (geomType == FdoGeometryType_LineString || geomType == FdoGeometryType_MultiLineString)
+    if (geomType == GeometryType_LineString || geomType == GeometryType_MultiLineString)
     {
         BeginOverpostGroup(type, true, exclude);
 

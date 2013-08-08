@@ -18,7 +18,9 @@
 #ifndef _atom_element_universe_h
 #define _atom_element_universe_h
 
+#ifndef EMSCRIPTEN
 ATOM::IUniverse* ATOM::BigBang();
+#endif
 
 #define MAX_PARSERS_IN_UNIVERSE 8
 

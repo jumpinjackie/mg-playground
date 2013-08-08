@@ -19,7 +19,10 @@
 #define MATHHELPER_H_
 
 #include <math.h>
+#ifndef EMSCRIPTEN
 #include "Foundation.h"
+#else
+#include "../Emscripten/EmCompat.h"
 #include <assert.h>
 
 const double EPSILON = 1e-10;

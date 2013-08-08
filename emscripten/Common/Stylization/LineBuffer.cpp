@@ -20,11 +20,10 @@
 #include "CSysTransformer.h"
 #include "RS_OutputStream.h"
 
-
 // For point reduction loop -- points will be dropped if the distance
 // between them squared is more than 1.96 (i.e. 1.4 pixels).
 // Dave said 1.4 is a good number.
-const double OPTIMIZE_DISTANCE_SQ = 1.96;
+const double LB_OPTIMIZE_DISTANCE_SQ = 1.96;
 
 // polygons and polylines below this # of points will not be victims of point reduction
 const int MIN_RING_SIZE_TO_OPTIMIZE = 6;
@@ -1342,7 +1341,7 @@ void LineBuffer::ToAgf(RS_OutputStream* os)
 LineBuffer* LineBuffer::Optimize(double drawingScale, LineBufferPool* lbp)
 {
     // the minimum allowed separation
-    double d2Min = OPTIMIZE_DISTANCE_SQ * drawingScale * drawingScale;
+    double d2Min = LB_OPTIMIZE_DISTANCE_SQ * drawingScale * drawingScale;
 
     // don't set any offset for new linebuffer, because it is already applied,
     // and MoveTo and LineTo would apply it again. Instead, set at end

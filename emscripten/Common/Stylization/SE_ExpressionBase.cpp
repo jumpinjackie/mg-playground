@@ -371,7 +371,8 @@ void SE_ExpressionBase::ParseStringExpression(const MdfModel::MdfString& exprstr
     }
 
     // check if it's one of the allowed constant values
-    if (allowedValues && wcsstr(allowedValues, str))
+    const wchar_t* res = std::wcsstr(allowedValues, str); //EMSCRIPTEN
+    if (allowedValues && res)
     {
         // found it - set the value to a copy
         val.setValue(DuplicateString(str));

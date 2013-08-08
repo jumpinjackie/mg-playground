@@ -178,8 +178,8 @@ void SE_PositioningAlgorithms::EightSurrounding(SE_ApplyContext* applyCtx,
     // eight surrounding labeling only applies to point feature geometry
     switch (geometry->geom_type())
     {
-        case FdoGeometryType_Point:
-        case FdoGeometryType_MultiPoint:
+        case GeometryType_Point:
+        case GeometryType_MultiPoint:
             break;
 
         default:
@@ -466,10 +466,10 @@ void SE_PositioningAlgorithms::PathLabels(SE_ApplyContext* applyCtx,
     // path labeling only applies to linestring feature geometry
     switch (geometry->geom_type())
     {
-        case FdoGeometryType_LineString:
-        case FdoGeometryType_MultiLineString:
-        case FdoGeometryType_CurveString:
-        case FdoGeometryType_MultiCurveString:
+        case GeometryType_LineString:
+        case GeometryType_MultiLineString:
+        case GeometryType_CurveString:
+        case GeometryType_MultiCurveString:
             break;
 
         default:

@@ -21,7 +21,9 @@
 #include "LineBuffer.h"
 #include "CSysTransformer.h"
 #include "RS_Raster.h"
+#ifndef EMSCRIPTEN
 #include <Fdo.h>
+#endif
 
 // Defines a feature data reader interface.
 class RS_FeatureReader
@@ -53,7 +55,9 @@ public:
     virtual const wchar_t* const* GetIdentPropNames(int& count) = 0;
     virtual const wchar_t* const* GetPropNames     (int& count) = 0;
 
+#ifndef EMSCRIPTEN
     virtual FdoIFeatureReader* GetInternalReader() = 0;
+#endif
 };
 
 #endif

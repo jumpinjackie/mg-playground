@@ -23,7 +23,11 @@
 #include "SLDSymbols.h"
 #include "SE_StyleVisitor.h"
 #include "SE_BufferPool.h"
+#ifndef EMSCRIPTEN
 #include "FdoEvaluator.h"
+#else
+#include "../Emscripten/EmEvaluator.h"
+#endif
 #include <cmath>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -510,8 +514,12 @@ void StylizationUtil::RenderCompositeSymbolization(CompositeSymbolization* csym,
     std::vector<SE_SymbolInstance*> symbolInstances;
     visitor.Convert(symbolInstances, csym);
 
+#ifndef EMSCRIPTEN
     // create our FDO evaluator
     FdoEvaluator eval(pSERenderer, NULL);
+#else
+    EmEvaluator eval(pSERenderer, NULL);
+#endif
 
     //-------------------------------------------------------
     // step 1 - get the preview bounds for the symbolization
@@ -723,7 +731,7 @@ void StylizationUtil::RenderCompositeSymbolization(CompositeSymbolization* csym,
                         case SymbolInstance::gcLineString:
                         {
                             // a horizontal line centered vertically in the preview image
-                            lb.SetGeometryType(FdoGeometryType_LineString);
+                            lb.SetGeometryType(GeometryType_LineString);
                             lb.MoveTo(x        , y + 0.5*height);
                             lb.LineTo(x + width, y + 0.5*height);
                             break;
@@ -732,7 +740,7 @@ void StylizationUtil::RenderCompositeSymbolization(CompositeSymbolization* csym,
                         case SymbolInstance::gcPolygon:
                         {
                             // a rectangle around the border of the preview image
-                            lb.SetGeometryType(FdoGeometryType_LineString);
+                            lb.SetGeometryType(GeometryType_LineString);
                             lb.MoveTo(x        , y         );
                             lb.LineTo(x + width, y         );
                             lb.LineTo(x + width, y + height);
@@ -764,7 +772,7 @@ void StylizationUtil::RenderCompositeSymbolization(CompositeSymbolization* csym,
                 {
                     // set the preview geometry to a rectangle filling the preview image
                     LineBuffer lb(5);
-                    lb.SetGeometryType(FdoGeometryType_Polygon);
+                    lb.SetGeometryType(GeometryType_Polygon);
                     lb.MoveTo(x        , y         );
                     lb.LineTo(x + width, y         );
                     lb.LineTo(x + width, y + height);
@@ -973,8 +981,12 @@ RS_Bounds StylizationUtil::GetCompositeSymbolizationBounds(CompositeSymbolizatio
     std::vector<SE_SymbolInstance*> symbolInstances;
     visitor.Convert(symbolInstances, csym);
 
+#ifndef EMSCRIPTEN
     // create an FDO evaluator
     FdoEvaluator eval(pSERenderer, NULL);
+#else
+    EmEvaluator eval(pSERenderer, NULL);
+#endif
 
     // calculate bounds - symbol geometries cannot use expressions, so no expression engine is needed
     RS_Bounds symBounds(DBL_MAX, DBL_MAX, -DBL_MAX, -DBL_MAX);

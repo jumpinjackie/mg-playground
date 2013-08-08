@@ -27,7 +27,11 @@
 #include "ElevationSettings.h"
 #include "FeatureTypeStyleVisitor.h"
 #include "StylizationEngine.h"
+#ifndef EMSCRIPTEN
 #include "FdoEvaluator.h"
+#else
+#include "../Emscripten/EmEvaluator.h"
+#endif
 #ifdef _DEBUG
 #include <cstdio>
 #endif
@@ -311,12 +315,16 @@ int DefaultStylizer::StylizeVLHelper(MdfModel::VectorLayerDefinition* layer,
     // ignore Z values if the renderer doesn't need them
     bool ignoreZ = !renderer->SupportsZ();
 
+#ifndef EMSCRIPTEN
     // create an FDO evaluator
     // NOTE: We must create a new evaluator for each call to StylizeVLHelper.  The
     //       evaluator stores a weak reference to the RS_FeatureReader's internal
     //       FdoIFeatureReader, and this internal reader is different for each
     //       call to StylizeVLHelper.
     FdoEvaluator eval(renderer, features);
+#else
+    EmEvaluator eval(renderer, features);
+#endif
 
     // main loop over feature data
     int nFeatures = 0;
@@ -326,7 +334,7 @@ int DefaultStylizer::StylizeVLHelper(MdfModel::VectorLayerDefinition* layer,
         ++nFeatures;
         #endif
 
-        LineBuffer* lb = LineBufferPool::NewLineBuffer(&m_lbPool, 8, FdoDimensionality_Z, ignoreZ);
+        LineBuffer* lb = LineBufferPool::NewLineBuffer(&m_lbPool, 8, Dimensionality_Z, ignoreZ);
         if (!lb)
             continue;
 
@@ -335,6 +343,7 @@ int DefaultStylizer::StylizeVLHelper(MdfModel::VectorLayerDefinition* layer,
         // tell line buffer the current drawing scale (used for arc tessellation)
         lb->SetDrawingScale(drawingScale);
 
+    #ifndef EMSCRIPTEN
         try
         {
             if (!features->IsNull(gpName))
@@ -353,6 +362,25 @@ int DefaultStylizer::StylizeVLHelper(MdfModel::VectorLayerDefinition* layer,
             LineBufferPool::FreeLineBuffer(&m_lbPool, spLB.release());
             continue;
         }
+    #else
+        try
+        {
+            if (!features->IsNull(gpName))
+                features->GetGeometry(gpName, lb, xformer);
+            else
+            {
+                // just move on to the next feature
+                LineBufferPool::FreeLineBuffer(&m_lbPool, spLB.release());
+                continue;
+            }
+        }
+        catch (...)
+        {
+            // just move on to the next feature
+            LineBufferPool::FreeLineBuffer(&m_lbPool, spLB.release());
+            continue;
+        }
+    #endif
 
         // if we know how to stylize this type of geometry, then go ahead
         GeometryAdapter* adapter = FindGeomAdapter(lb->geom_type());
@@ -408,8 +436,12 @@ void DefaultStylizer::StylizeGridLayer(MdfModel::GridLayerDefinition* layer,
     // set the line buffer pool for the renderer to use
     renderer->SetBufferPool(&m_lbPool);
 
+#ifndef EMSCRIPTEN
     // create an expression engine with our custom functions
     FdoEvaluator eval(renderer, features);
+#else
+    EmEvaluator eval(renderer, features);
+#endif
 
     // find the FeatureTypeStyle
     MdfModel::GridColorStyle* gcs = range->GetColorStyle();
@@ -487,35 +519,35 @@ GeometryAdapter* DefaultStylizer::FindGeomAdapter(int geomType)
     // otherwise need to create one based on the geometry type
     switch (geomType)
     {
-    case FdoGeometryType_LineString:
-        m_hGeomStylizers[FdoGeometryType_LineString] = new PolylineAdapter(&m_lbPool);
+    case GeometryType_LineString:
+        m_hGeomStylizers[GeometryType_LineString] = new PolylineAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_MultiLineString:
-        m_hGeomStylizers[FdoGeometryType_MultiLineString] = new PolylineAdapter(&m_lbPool);
+    case GeometryType_MultiLineString:
+        m_hGeomStylizers[GeometryType_MultiLineString] = new PolylineAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_CurveString:
-        m_hGeomStylizers[FdoGeometryType_CurveString] = new PolylineAdapter(&m_lbPool);
+    case GeometryType_CurveString:
+        m_hGeomStylizers[GeometryType_CurveString] = new PolylineAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_MultiCurveString:
-        m_hGeomStylizers[FdoGeometryType_MultiCurveString] = new PolylineAdapter(&m_lbPool);
+    case GeometryType_MultiCurveString:
+        m_hGeomStylizers[GeometryType_MultiCurveString] = new PolylineAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_Polygon:
-        m_hGeomStylizers[FdoGeometryType_Polygon] = new PolygonAdapter(&m_lbPool);
+    case GeometryType_Polygon:
+        m_hGeomStylizers[GeometryType_Polygon] = new PolygonAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_MultiPolygon:
-        m_hGeomStylizers[FdoGeometryType_MultiPolygon] = new PolygonAdapter(&m_lbPool);
+    case GeometryType_MultiPolygon:
+        m_hGeomStylizers[GeometryType_MultiPolygon] = new PolygonAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_CurvePolygon:
-        m_hGeomStylizers[FdoGeometryType_CurvePolygon] = new PolygonAdapter(&m_lbPool);
+    case GeometryType_CurvePolygon:
+        m_hGeomStylizers[GeometryType_CurvePolygon] = new PolygonAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_MultiCurvePolygon:
-        m_hGeomStylizers[FdoGeometryType_MultiCurvePolygon] = new PolygonAdapter(&m_lbPool);
+    case GeometryType_MultiCurvePolygon:
+        m_hGeomStylizers[GeometryType_MultiCurvePolygon] = new PolygonAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_Point:
-        m_hGeomStylizers[FdoGeometryType_Point] = new PointAdapter(&m_lbPool);
+    case GeometryType_Point:
+        m_hGeomStylizers[GeometryType_Point] = new PointAdapter(&m_lbPool);
         break;
-    case FdoGeometryType_MultiPoint:
-        m_hGeomStylizers[FdoGeometryType_MultiPoint] = new PointAdapter(&m_lbPool);
+    case GeometryType_MultiPoint:
+        m_hGeomStylizers[GeometryType_MultiPoint] = new PointAdapter(&m_lbPool);
         break;
     default :
         break;

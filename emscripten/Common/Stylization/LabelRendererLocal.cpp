@@ -18,7 +18,11 @@
 #include "stdafx.h"
 #include "LabelRendererLocal.h"
 #include "SE_Renderer.h"
+#ifndef EMSCRIPTEN
 #include "FdoEvaluator.h"
+#else
+#include "../Emscripten/EmCompat.h"
+#endif
 
 //#define DEBUG_LABELS
 
@@ -175,7 +179,7 @@ void LabelRendererLocal::ProcessLabelGroup(RS_LabelInfo*    labels,
             offset += lblpathpts;
         }
     }
-    else if (geomType == FdoGeometryType_Polygon || geomType == FdoGeometryType_MultiPolygon)
+    else if (geomType == GeometryType_Polygon || geomType == GeometryType_MultiPolygon)
     {
         // we only expect one label info per polygon to be passed in from stylization
         _ASSERT(nlabels == 1);
@@ -376,8 +380,7 @@ void LabelRendererLocal::EndOverpostGroup()
 //////////////////////////////////////////////////////////////////////////////
 void LabelRendererLocal::BlastLabels()
 {
-    try
-    {
+    STYLIZATION_TRY()
         //-------------------------------------------------------
         // step 1 - perform stitching
         //-------------------------------------------------------

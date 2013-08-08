@@ -24,7 +24,11 @@
 #include "SE_PositioningAlgorithms.h"
 #include "SE_SymbolDefProxies.h"
 #include "FeatureTypeStyleVisitor.h"
+#ifndef EMSCRIPTEN
 #include "FdoEvaluator.h"
+#else
+#include "../Emscripten/EmEvaluator.h"
+#endif
 
 #include <algorithm>
 #include <functional>
@@ -121,12 +125,16 @@ void StylizationEngine::StylizeVectorLayer(MdfModel::VectorLayerDefinition* laye
         if (numPasses > 1)
             reader->Reset();
 
+    #ifndef EMSCRIPTEN
         // create an expression engine with our custom functions
         // NOTE: We must create a new engine with each rendering pass.  The engine
         //       stores a weak reference to the RS_FeatureReader's internal
         //       FdoIFeatureReader, and this internal reader is different for each
         //       pass.
         FdoEvaluator eval(se_renderer, reader);
+    #else
+        EmEvaluator eval(se_renderer, reader);
+    #endif
 
         while (reader->ReadNext())
         {
@@ -135,7 +143,7 @@ void StylizationEngine::StylizeVectorLayer(MdfModel::VectorLayerDefinition* laye
                 nFeatures++;
             #endif
 
-            LineBuffer* lb = LineBufferPool::NewLineBuffer(m_pool, 8, FdoDimensionality_Z, ignoreZ);
+            LineBuffer* lb = LineBufferPool::NewLineBuffer(m_pool, 8, Dimensionality_Z, ignoreZ);
             if (!lb)
                 continue;
 
@@ -144,6 +152,7 @@ void StylizationEngine::StylizeVectorLayer(MdfModel::VectorLayerDefinition* laye
             // tell line buffer the current drawing scale (used for arc tessellation)
             lb->SetDrawingScale(drawingScale);
 
+        #ifndef EMSCRIPTEN
             try
             {
                 if (!reader->IsNull(gpName))
@@ -162,6 +171,25 @@ void StylizationEngine::StylizeVectorLayer(MdfModel::VectorLayerDefinition* laye
                 LineBufferPool::FreeLineBuffer(m_pool, spLB.release());
                 continue;
             }
+        #else
+            try
+            {
+                if (!reader->IsNull(gpName))
+                    reader->GetGeometry(gpName, lb, xformer);
+                else
+                {
+                    // just move on to the next feature
+                    LineBufferPool::FreeLineBuffer(m_pool, spLB.release());
+                    continue;
+                }
+            }
+            catch (...)
+            {
+                // just move on to the next feature
+                LineBufferPool::FreeLineBuffer(m_pool, spLB.release());
+                continue;
+            }
+        #endif
 
             // stylize once for each composite type style
             for (size_t i=0; i<numTypeStyles; ++i)
@@ -454,19 +482,23 @@ void StylizationEngine::StylizeWatermark(SE_Renderer* se_renderer,
     {
         ++numPasses;
 
+    #ifndef EMSCRIPTEN
         // create an expression engine with our custom functions
         // NOTE: We must create a new engine with each rendering pass.  The engine
         //       stores a weak reference to the RS_FeatureReader's internal
         //       FdoIFeatureReader, and this internal reader is different for each
         //       pass.
         FdoEvaluator eval(se_renderer, NULL);
+    #else
+        EmEvaluator eval(se_renderer, NULL);
+    #endif
 
         std::auto_ptr<LineBuffer> spLB;
         size_t nPos = watermarkPosList.size();
         for (size_t posIx=0; posIx<nPos; posIx+=2)
         {
             //Get geometry
-            LineBuffer* lb = LineBufferPool::NewLineBuffer(m_pool, 8, FdoDimensionality_Z);
+            LineBuffer* lb = LineBufferPool::NewLineBuffer(m_pool, 8, Dimensionality_Z);
             spLB.reset(lb);
             lb->MoveTo(watermarkPosList[posIx], watermarkPosList[posIx+1]);
             // tell line buffer the current drawing scale (used for arc tessellation)
@@ -951,29 +983,29 @@ void StylizationEngine::Stylize(RS_FeatureReader* reader,
         {
             switch (geometry->geom_type())
             {
-            case FdoGeometryType_Point:
-            case FdoGeometryType_MultiPoint:
+            case GeometryType_Point:
+            case GeometryType_MultiPoint:
                 if (sym->geomContext != SymbolInstance::gcPoint)
                     continue;
                 break;
 
-            case FdoGeometryType_LineString:
-            case FdoGeometryType_MultiLineString:
-            case FdoGeometryType_CurveString:
-            case FdoGeometryType_MultiCurveString:
+            case GeometryType_LineString:
+            case GeometryType_MultiLineString:
+            case GeometryType_CurveString:
+            case GeometryType_MultiCurveString:
                 if (sym->geomContext != SymbolInstance::gcLineString)
                     continue;
                 break;
 
-            case FdoGeometryType_Polygon:
-            case FdoGeometryType_MultiPolygon:
-            case FdoGeometryType_CurvePolygon:
-            case FdoGeometryType_MultiCurvePolygon:
+            case GeometryType_Polygon:
+            case GeometryType_MultiPolygon:
+            case GeometryType_CurvePolygon:
+            case GeometryType_MultiCurvePolygon:
                 if (sym->geomContext != SymbolInstance::gcPolygon)
                     continue;
                 break;
 
-//          case FdoGeometryType_MultiGeometry:
+//          case GeometryType_MultiGeometry:
 //              continue;
 //              break;
             }
@@ -1113,29 +1145,29 @@ void StylizationEngine::Stylize(RS_FeatureReader* reader,
             {
                 switch (geometry->geom_type())
                 {
-                case FdoGeometryType_Point:
-                case FdoGeometryType_MultiPoint:
+                case GeometryType_Point:
+                case GeometryType_MultiPoint:
                     if (sym->geomContext != SymbolInstance::gcPoint)
                         continue;
                     break;
 
-                case FdoGeometryType_LineString:
-                case FdoGeometryType_MultiLineString:
-                case FdoGeometryType_CurveString:
-                case FdoGeometryType_MultiCurveString:
+                case GeometryType_LineString:
+                case GeometryType_MultiLineString:
+                case GeometryType_CurveString:
+                case GeometryType_MultiCurveString:
                     if (sym->geomContext != SymbolInstance::gcLineString)
                         continue;
                     break;
 
-                case FdoGeometryType_Polygon:
-                case FdoGeometryType_MultiPolygon:
-                case FdoGeometryType_CurvePolygon:
-                case FdoGeometryType_MultiCurvePolygon:
+                case GeometryType_Polygon:
+                case GeometryType_MultiPolygon:
+                case GeometryType_CurvePolygon:
+                case GeometryType_MultiCurvePolygon:
                     if (sym->geomContext != SymbolInstance::gcPolygon)
                         continue;
                     break;
 
-//              case FdoGeometryType_MultiGeometry:
+//              case GeometryType_MultiGeometry:
 //                  continue;
 //                  break;
                 }
